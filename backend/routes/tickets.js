@@ -7,12 +7,21 @@ const db = require('../db');
 router.get('/', async (req, res) => {
 	try {
 		const [rows] = await db.execute(`
-      SELECT tickets.id, users.name AS user, concerts.name AS concert, seats.section, seats.row__number, seats.seat_number
-      FROM tickets
-      JOIN users ON tickets.user_id = users.id
-      JOIN concerts ON tickets.concert_id = concerts.id
-      LEFT JOIN seats ON tickets.seat_id = seats.id
-    `);
+  SELECT 
+    tickets.id,
+    users.name AS user,
+    concerts.name AS concert,
+    concerts.image_path AS image,
+    seats.section,
+    seats.row__number,
+    seats.seat_number,
+    tickets.status
+  FROM tickets
+  JOIN concerts ON tickets.concert_id = concerts.id
+  LEFT JOIN seats ON tickets.seat_id = seats.id
+  LEFT JOIN users ON tickets.user_id = users.id
+`);
+
 		res.json(rows);
 	} catch (err) {
 		console.error('Помилка запиту:', err);

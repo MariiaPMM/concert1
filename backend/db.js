@@ -12,4 +12,3 @@ const pool = mysql.createPool({
 
 module.exports = pool.promise(); // Якщо використовуєш mysql2, додавай `.promise()`
 
- 

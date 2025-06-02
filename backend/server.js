@@ -15,15 +15,21 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.get('/api/tickets', async (req, res) => {
 	try {
 		const [rows] = await db.execute(`
-       SELECT 
-        tickets.*, 
-        concerts.image_path,
-        concerts.name AS concert_name,
-        users.name AS user_name
-      FROM tickets
-      JOIN concerts ON tickets.concert_id = concerts.id
-      LEFT JOIN users ON tickets.user_id = users.id
-    `);
+  SELECT 
+    tickets.id,
+    users.name AS user,
+    concerts.name AS concert,
+    concerts.image_path AS image,
+    seats.section,
+    seats.row__number,
+    seats.seat_number,
+    tickets.status
+  FROM tickets
+  JOIN concerts ON tickets.concert_id = concerts.id
+  LEFT JOIN seats ON tickets.seat_id = seats.id
+  LEFT JOIN users ON tickets.user_id = users.id
+`);
+
 		res.json(rows);
 	} catch (err) {
 		console.error('Помилка запиту:', err);
@@ -43,20 +49,6 @@ db.execute('SELECT COUNT(*) AS total FROM tickets')
 	.catch(err => {
 		console.error('❌ Помилка підключення до бази даних:', err);
 	});
-
-// app.post('/api/users', (req, res) => {
-// 	const { name, email, phone } = req.body;
-// 	const query = 'INSERT INTO users (name, email, phone) VALUES (?, ?, ?)';
-// 	db.query(query, [name, email, phone], (err, result) => {
-// 		if (err) {
-// 			console.error('Помилка при вставці:', err);
-// 			return res
-// 				.status(500)
-// 				.json({ error: 'Не вдалося зареєструвати користувача' });
-// 		}
-// 		res.json({ message: 'Користувача зареєстровано', userId: result.insertId });
-// 	});
-// });
 
 const PORT = 3000;
 app.listen(PORT, () => {
