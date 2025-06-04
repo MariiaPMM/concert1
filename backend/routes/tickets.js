@@ -12,12 +12,12 @@ router.get('/', async (req, res) => {
     users.name AS user,
     concerts.name AS concert,
     concerts.image_path AS image,
+		concerts.price AS price
     seats.section,
     seats.row__number,
     seats.seat_number,
     tickets.status,
 		concerts.location AS location,
-		tickets.price
   FROM tickets
   JOIN concerts ON tickets.concert_id = concerts.id
   LEFT JOIN seats ON tickets.seat_id = seats.id
