@@ -5,7 +5,10 @@ const app = express();
 const db = require('../backend/db');
 const ticketRoutes = require('./routes/tickets');
 const seatsRoutes = require('./routes/seats');
-const concertRoutes = require('./routes/concerts'); // ➕ новий маршрут
+const concertRoutes = require('./routes/concerts');
+const authRoutes = require('./routes/auth');
+
+
 
 app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
@@ -13,7 +16,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/seats', seatsRoutes);
 app.use('/api/tickets', ticketRoutes);
-app.use('/api/concerts', concertRoutes); // ➕ додано маршрут
+app.use('/api/concerts', concertRoutes); 
+app.use('/api/auth', authRoutes);
 
 app.get('/', (req, res) => {
 	res.send('🚀 Сервер працює!');

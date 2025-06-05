@@ -2,7 +2,14 @@
   <header>
     <div class="concert__header">
       <p class="logo">Concerts</p>
-      <button @click="showCart = true" class="button__basket"><img src="../assets/images/basket.png" alt=""></button>
+      <div class="header__nav">
+        <button @click="showRegister = true" class="register__link">
+          <img class="user__link" src="../assets/images/user.png" alt="" />
+        </button>
+        <button @click="showCart = true" class="button__basket">
+          <img src="../assets/images/basket.png" alt="" />
+        </button>
+      </div>
     </div>
   </header>
 
@@ -56,16 +63,22 @@
       </ul>
       <p v-else>Корзина порожня</p>
     </BaseModal>
+
+    <BaseModal v-if="showRegister" @close="showRegister = false">
+      <RegisterForm />
+    </BaseModal>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
 import BaseModal from '../components/BaseModal.vue'
+import RegisterForm from '../components/RegisterForm.vue'
 
 export default {
   components: {
     BaseModal,
+    RegisterForm,
   },
   data() {
     return {
@@ -76,6 +89,7 @@ export default {
       selectedSeat: null,
       showCart: false,
       cart: [],
+      showRegister: false,
     }
   },
   methods: {
@@ -109,7 +123,7 @@ export default {
         .post('http://localhost:3000/api/seats/buy', {
           concertId: this.selectedConcert.id,
           seatId: this.selectedSeat.id,
-          userId: 1,
+          userId: 1, // Замінити пізніше на реального користувача
           price: 200,
         })
         .then(() => {
@@ -214,8 +228,15 @@ header {
   color: white;
   cursor: not-allowed;
 }
-.button__basket {
+.button__basket,
+.register__link {
   all: unset;
   cursor: pointer;
+  /* border: 1px solid white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  margin: 0 auto; */
 }
+
 </style>
