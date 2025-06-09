@@ -16,7 +16,7 @@ export default {
   data() {
     return {
       cart: [],
-    }
+    } 
   },
   mounted() {
     const stored = localStorage.getItem('cart')

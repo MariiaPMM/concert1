@@ -8,7 +8,8 @@
 </template>
 
 <script>
-import axios from 'axios'
+import authService from '@/services/authService'
+import { useUserStore } from '@/stores/user'
 
 export default {
   emits: ['close'],
@@ -19,20 +20,31 @@ export default {
       message: '',
     }
   },
+
   methods: {
-    register() {
-      axios
-        .post('http://localhost:3000/api/auth/register', {
-          name: this.name,
-          password: this.password,
-        })
-        .then((res) => {
-          this.message = res.data.message
-          this.$emit('close') // закриє модалку після успішної реєстрації
-        })
-        .catch((err) => {
-          this.message = err.response?.data?.error || 'Сталася помилка'
-        })
+    async register() {
+      try {
+        const res = await authService.register(this.name, this.password)
+        const userStore = useUserStore()
+        userStore.setToken(res.data.token)
+
+        const profileRes = await authService.getProfile()
+        if (userStore.setProfile) {
+          userStore.setProfile(profileRes.data)
+        } else {
+          console.warn('userStore.setProfile відсутній')
+        }
+
+        this.$emit('close')
+        if (this.$router) {
+          this.$router.push('/cabinet')
+        } else {
+          console.warn('this.$router відсутній')
+        }
+      } catch (err) {
+        this.message = err.response?.data?.error || 'Сталася помилка'
+        console.error(err) // Додаємо лог помилки
+      }
     },
   },
 }
