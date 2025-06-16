@@ -1,49 +1,51 @@
 <template>
   <div class="user-cabinet">
+    <button class="close-btn" @click="goHome">❌</button>
+
     <h2>Кабінет користувача</h2>
 
-    <div v-if="user">
-      <!-- <img src="../assets/images/user.png" alt="" /> -->
-      <p>{{ user.name }}</p>
-      <br />
-      <p v-if="user.email"><strong>Email:</strong> {{ user.email }}</p>
+    <div v-if="loading">
+      <p>Завантаження профілю...</p>
     </div>
 
-    <div v-else-if="error">
-      <p class="error">Помилка: {{ error }}</p>
+    <div v-else-if="user">
+      <p><strong>Ім'я:</strong> {{ user.name }}</p>
+      <p v-if="user.email"><strong>Email:</strong> {{ user.email }}</p>
+      <button @click="logout">Вийти</button>
     </div>
 
     <div v-else>
-      <p>Завантаження профілю...</p>
+      <p class="error">Ви не увійшли в систему.</p>
     </div>
   </div>
 </template>
 
 <script>
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 import authService from '@/services/authService'
 
 export default {
   name: 'UserCabinet',
-  data() {
-    return {
-      user: null,
-      error: null,
+  setup() {
+    const router = useRouter()
+    const userStore = useUserStore()
+
+    const loading = computed(() => userStore.isLoadingProfile)
+    const user = computed(() => userStore.profile)
+
+    function goHome() {
+      router.push('/') // Перехід на головну без логаута
     }
-  },
-  mounted() {
-    authService
-      .getProfile()
-      .then((response) => {
-        this.user = response.data
-      })
-      .catch((error) => {
-        if (error.response && error.response.status === 401) {
-          this.error = 'Неавторизований доступ. Будь ласка, увійдіть у систему.'
-        } else {
-          this.error = 'Не вдалося завантажити профіль.'
-        }
-        console.error(error)
-      })
+
+    function logout() {
+      authService.logout()
+      userStore.clearAll()
+      router.push('/')
+    }
+
+    return { loading, user, goHome, logout }
   },
 }
 </script>
@@ -56,8 +58,30 @@ export default {
   align-items: center;
   color: white;
   padding: 20px;
+  position: relative;
+  min-height: 300px;
+  background-color: #222;
+  border-radius: 8px;
+  max-width: 400px;
+  margin: 20px auto;
 }
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.close-btn:hover {
+  color: #ff5555;
+}
+
 .error {
-  color: red;
+  color: #ff6666;
 }
 </style>

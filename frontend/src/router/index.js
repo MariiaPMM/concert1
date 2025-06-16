@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import CartView from '../components/CartView.vue'
-import RegisterForm from '../components/RegisterForm.vue'
+// import RegisterForm from '../components/AuthModal.vue'
 import UserCabinet from '../views/UserCabinet.vue'
-import LoginForm from '../views/LoginForm.vue'
+import LoginForm from '../components/AuthModal.vue'
 
 const routes = [
   {
@@ -17,19 +17,14 @@ const routes = [
     component: CartView,
   },
   {
-    path: '/register',
-    name: 'Register',
-    component: RegisterForm,
+    path: '/auth',
+    name: 'Auth',
+    component: LoginForm,
   },
   {
     path: '/cabinet',
     name: 'Cabinet',
     component: UserCabinet,
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: LoginForm,
   },
 ]
 

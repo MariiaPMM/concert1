@@ -3,11 +3,11 @@
     <div class="concert__header">
       <p class="logo">Concerts</p>
       <div class="header__nav">
-        <button @click="showRegister = true" class="register__link">
-          <img class="user__link" src="../assets/images/user.png" alt="" />
+        <button @click="handleUserClick" class="register__link">
+          <img class="user__link" src="../assets/images/user.png" alt="User Icon" />
         </button>
         <button @click="showCart = true" class="button__basket">
-          <img src="../assets/images/basket.png" alt="" />
+          <img src="../assets/images/basket.png" alt="Basket Icon" />
         </button>
       </div>
     </div>
@@ -24,7 +24,7 @@
         <div>{{ concert.name }}</div>
         <div>{{ concert.location }}</div>
         <div>{{ concert.date }}</div>
-        <div>{{ concert.price }}</div>
+        <div>{{ concert.price }} ₴</div>
         <button @click="openModal(concert)">Детальніше</button>
       </li>
     </ul>
@@ -53,32 +53,30 @@
       <button :disabled="!selectedSeat" @click="buyTicket">Купити квиток</button>
     </BaseModal>
 
-    <!-- Модальне вікно корзини -->
-    <BaseModal v-if="showCart" @close="showCart = false">
-      <h3>Корзина</h3>
-      <ul v-if="cart.length">
-        <li v-for="(item, index) in cart" :key="index">
-          {{ item.concertName }} — Місце №{{ item.seatNumber }} — {{ item.price }}₴
-        </li>
-      </ul>
-      <p v-else>Корзина порожня</p>
+    <!-- Модальне вікно авторизації/кабінету -->
+    <BaseModal v-if="showRegister" @close="showRegister = false">
+      <component :is="userStore.token ? 'UserCabinet' : 'AuthModal'" />
     </BaseModal>
 
-    <BaseModal v-if="showRegister" @close="showRegister = false">
-      <RegisterForm />
-    </BaseModal>
+    <!-- Модальне вікно корзини -->
+    <CartView v-if="showCart" @close="showCart = false" />
   </div>
 </template>
 
 <script>
 import axios from 'axios'
 import BaseModal from '../components/BaseModal.vue'
-import RegisterForm from '../components/RegisterForm.vue'
+import AuthModal from '../components/AuthModal.vue'
+import UserCabinet from '../views/UserCabinet.vue'
+import CartView from '../components/CartView.vue'
+import { useUserStore } from '@/stores/user'
 
 export default {
   components: {
     BaseModal,
-    RegisterForm,
+    AuthModal,
+    UserCabinet,
+    CartView,
   },
   data() {
     return {
@@ -87,18 +85,26 @@ export default {
       selectedConcert: null,
       seats: [],
       selectedSeat: null,
-      showCart: false,
-      cart: [],
       showRegister: false,
+      showCart: false,
+      userStore: useUserStore(),
     }
   },
   methods: {
+    getAuthHeaders() {
+      const token = this.userStore.token
+      return token && token !== 'null' ? { Authorization: `Bearer ${token}` } : {}
+    },
+    handleUserClick() {
+      this.showRegister = true
+    },
     openModal(concert) {
       this.selectedConcert = concert
       this.selectedSeat = null
-
       axios
-        .get(`http://localhost:3000/api/seats/${concert.id}`)
+        .get(`http://localhost:3000/api/seats/${concert.id}`, {
+          headers: this.getAuthHeaders(),
+        })
         .then((response) => {
           this.seats = response.data.map((seat) => ({
             id: seat.id,
@@ -119,26 +125,25 @@ export default {
     buyTicket() {
       if (!this.selectedSeat) return
 
+      if (!this.userStore.token) {
+        alert('Ви маєте увійти, щоб купити квиток')
+        this.showRegister = true
+        return
+      }
+
       axios
-        .post('http://localhost:3000/api/seats/buy', {
-          concertId: this.selectedConcert.id,
-          seatId: this.selectedSeat.id,
-          userId: 1, // Замінити пізніше на реального користувача
-          price: 200,
-        })
+        .post(
+          'http://localhost:3000/api/seats/buy',
+          {
+            concertId: this.selectedConcert.id,
+            seatId: this.selectedSeat.id,
+            price: this.selectedConcert.price,
+          },
+          {
+            headers: this.getAuthHeaders(),
+          },
+        )
         .then(() => {
-          const newTicket = {
-            concertName: this.selectedConcert.name,
-            seatNumber: this.selectedSeat.number,
-            price: 200,
-          }
-
-          let stored = localStorage.getItem('cart')
-          let cart = stored ? JSON.parse(stored) : []
-          cart.push(newTicket)
-          localStorage.setItem('cart', JSON.stringify(cart))
-          this.loadCart()
-
           alert(`Квиток на місце №${this.selectedSeat.number} куплено`)
           this.selectedConcert = null
         })
@@ -147,23 +152,17 @@ export default {
           alert('Сталася помилка при покупці квитка')
         })
     },
-    loadCart() {
-      const stored = localStorage.getItem('cart')
-      this.cart = stored ? JSON.parse(stored) : []
-    },
   },
-  mounted() {
-    axios
-      .get('http://localhost:3000/api/concerts')
-      .then((response) => {
-        this.concerts = response.data
-      })
-      .catch((error) => {
-        this.error = 'Не вдалося отримати концерти'
-        console.error(error)
-      })
+  async mounted() {
+    await this.userStore.initFromLocalStorage()
 
-    this.loadCart()
+    try {
+      const response = await axios.get('http://localhost:3000/api/concerts')
+      this.concerts = response.data
+    } catch (error) {
+      this.error = 'Не вдалося отримати концерти'
+      console.error(error)
+    }
   },
 }
 </script>
@@ -232,11 +231,5 @@ header {
 .register__link {
   all: unset;
   cursor: pointer;
-  /* border: 1px solid white;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  margin: 0 auto; */
 }
-
 </style>

@@ -1,64 +1,116 @@
 const express = require('express');
-const router = express.Router();
+const jwt = require('jsonwebtoken');
 const db = require('../db');
+const router = express.Router();
 
-// Отримати всі квитки
+const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
-router.get('/', async (req, res) => {
+// 🔐 Middleware перевірки токена
+function authMiddleware(req, res, next) {
+	const authHeader = req.headers.authorization;
+	if (!authHeader || !authHeader.startsWith('Bearer ')) {
+		return res
+			.status(401)
+			.json({ error: 'Немає або неправильний заголовок авторизації' });
+	}
+
+	const token = authHeader.split(' ')[1];
 	try {
-		const [rows] = await db.execute(`
-  SELECT 
-    tickets.id,
-    users.name AS user,
-    concerts.name AS concert,
-    concerts.image_path AS image,
-		concerts.price AS price
-    seats.section,
-    seats.row__number,
-    seats.seat_number,
-    tickets.status,
-		concerts.location AS location,
-  FROM tickets
-  JOIN concerts ON tickets.concert_id = concerts.id
-  LEFT JOIN seats ON tickets.seat_id = seats.id
-  LEFT JOIN users ON tickets.user_id = users.id
-`);
+		const decoded = jwt.verify(token, JWT_SECRET);
+		if (!decoded?.id) {
+			return res.status(403).json({ error: 'Недійсний токен: відсутній ID' });
+		}
+		req.user = decoded;
+		next();
+	} catch (err) {
+		return res.status(403).json({ error: 'Недійсний токен' });
+	}
+}
 
+// ✅ Отримати корзину користувача
+router.get('/cart', authMiddleware, async (req, res) => {
+	try {
+		const [rows] = await db.execute(
+			`SELECT 
+        t.id, concerts.name AS concertName, seats.seat_number AS seatNumber, concerts.price, t.status
+      FROM tickets t
+      JOIN concerts ON t.concert_id = concerts.id
+      JOIN seats ON t.seat_id = seats.id
+      WHERE t.user_id = ? AND status = 'недійсний'`,
+			[req.user.id]
+		);
 		res.json(rows);
 	} catch (err) {
-		console.error('Помилка запиту:', err);
 		res.status(500).json({ error: 'Помилка сервера' });
 	}
 });
-module.exports = router;
 
-const multer = require('multer');
-const path = require('path');
+// ✅ Купити один квиток із корзини
+router.post('/cart/buy/:ticketId', authMiddleware, async (req, res) => {
+	try {
+		const [result] = await db.execute(
+			`UPDATE tickets 
+       SET status = 'дійсний' 
+       WHERE id = ? AND user_id = ? AND status = 'недійсний'`,
+			[req.params.ticketId, req.user.id]
+		);
 
-// Конфігурація сховища
-const storage = multer.diskStorage({
-	destination: (req, file, cb) => {
-		cb(null, 'uploads/'); // шлях до папки (відносно `server.js`)
-	},
-	filename: (req, file, cb) => {
-		const uniqueName = Date.now() + '-' + file.originalname;
-		cb(null, uniqueName);
-	},
-});
-
-const upload = multer({ storage: storage });
-
-router.post('/upload/:id/image', upload.single('image'), (req, res) => {
-	const concertId = req.params.id;
-	const imagePath = `uploads/${req.file.filename}`;
-
-	const sql = 'UPDATE concerts SET image_path = ? WHERE id = ?';
-	db.query(sql, [imagePath, concertId], (err, result) => {
-		if (err) {
-			console.error('❌ Помилка оновлення зображення:', err);
-			return res.status(500).json({ error: 'Помилка сервера' });
+		if (result.affectedRows === 0) {
+			return res
+				.status(404)
+				.json({ error: 'Квиток не знайдено або вже куплено' });
 		}
-		res.json({ message: '✅ Зображення збережене для концерту', imagePath });
-	});
+
+		res.json({ message: 'Квиток успішно куплено' });
+	} catch (err) {
+		res.status(500).json({ error: 'Помилка сервера' });
+	}
 });
+
+// ✅ Купити всі квитки в корзині
+router.post('/cart/checkout', authMiddleware, async (req, res) => {
+	try {
+		const [result] = await db.execute(
+			`UPDATE tickets
+         SET status = 'дійсний'
+       WHERE user_id = ? AND status = 'недійсний'`,
+			[req.user.id]
+		);
+
+		if (result.affectedRows === 0) {
+			return res
+				.status(400)
+				.json({ message: 'У корзині немає квитків для покупки' });
+		}
+
+		res.json({
+			message: `Оплата успішна. Куплено квитків: ${result.affectedRows}`,
+		});
+	} catch (err) {
+		console.error('Помилка при оплаті квитків:', err);
+		res.status(500).json({ error: 'Виникла помилка під час оплати' });
+	}
+});
+
+// ✅ Видалити квиток з корзини
+router.delete('/cart/:id', authMiddleware, async (req, res) => {
+	try {
+		const [result] = await db.execute(
+			`DELETE FROM tickets 
+       WHERE id = ? AND user_id = ? AND status = 'недійсний'`,
+			[req.params.id, req.user.id]
+		);
+
+		if (result.affectedRows === 0) {
+			return res
+				.status(404)
+				.json({ error: 'Квиток не знайдено або вже куплено' });
+		}
+
+		res.json({ message: 'Квиток видалено з корзини' });
+	} catch (err) {
+		res.status(500).json({ error: 'Помилка сервера' });
+	}
+});
+
 module.exports = router;

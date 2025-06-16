@@ -1,25 +1,35 @@
-import axios from 'axios'
-
-const API_URL = 'http://localhost:3000/api/auth'
+// src/services/authService.js
+import api from './api'
 
 const authService = {
-  register(name, password) {
-    return axios.post(`${API_URL}/register`, { name, password })
+  async register(userData) {
+    try {
+      const res = await api.post('/auth/register', userData)
+      localStorage.setItem('token', res.data.token) // Зберігаємо токен локально
+      return res
+    } catch (error) {
+      console.error('Registration error:', error)
+      throw error
+    }
   },
 
-  login(name, password) {
-    return axios.post(`${API_URL}/login`, { name, password })
+  async login(email, password) {
+    try {
+      const res = await api.post('/auth/login', { email, password })
+      localStorage.setItem('token', res.data.token) // Зберігаємо токен локально
+      return res
+    } catch (error) {
+      console.error('Login error:', error)
+      throw error
+    }
   },
 
   getProfile() {
-    const token = localStorage.getItem('token')
-    if (!token) return Promise.reject(new Error('Немає токена'))
+    return api.get('/auth/profile')
+  },
 
-    return axios.get(`${API_URL}/profile`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+  logout() {
+    localStorage.removeItem('token')
   },
 }
 
