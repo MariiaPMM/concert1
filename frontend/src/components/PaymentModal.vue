@@ -76,11 +76,12 @@ export default {
       }
 
       try {
-        console.log('💬 Покупка квитка ID =', `/tickets/buy/${props.ticket.id}`)
+        console.log('💬 Покупка квитка ID =', `/tickets/cart/buy/${props.ticket.id}`)
 
-        await api.post(`/tickets/cart/buy/${props.ticket.id}`)
+        const response = await api.post(`/tickets/cart/buy/${props.ticket.id}`)
 
-        emit('paid', props.ticket)
+        // Передаємо в батьківський компонент не лише квиток, а й qrCode
+        emit('paid', { ticket: props.ticket, qrCode: response.data.qrCode })
       } catch (e) {
         error.value = 'Помилка при оплаті квитка'
         console.error(e)

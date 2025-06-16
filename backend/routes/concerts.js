@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../../backend/db');
+const { db } = require('../../backend/db');
 
 // Отримати всі концерти
 router.get('/', async (req, res) => {

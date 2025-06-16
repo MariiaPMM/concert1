@@ -2,6 +2,7 @@
   <BaseModal @close="$emit('close')">
     <section class="cart-modal">
       <h2>Корзина квитків</h2>
+      <img v-if="qrCode" :src="qrCode" alt="QR-код квитка" />
       <p>Привіт, {{ username }}!</p>
 
       <p v-if="message" class="message">{{ message }}</p>
@@ -42,6 +43,7 @@ export default {
     const userStore = useUserStore()
     const cart = ref([])
     const message = ref('')
+    const qrCode = ref(null)
 
     const username = computed(() => userStore.profile?.name || 'Невідомий користувач')
 
@@ -72,9 +74,10 @@ export default {
       selectedTicket.value = null
     }
 
-    const handlePaid = (paidTicket) => {
+    const handlePaid = ({ ticket, qrCode: qr }) => {
       message.value = 'Квиток куплено!'
-      cart.value = cart.value.filter((item) => item.id !== paidTicket.id)
+      cart.value = cart.value.filter((item) => item.id !== ticket.id)
+      qrCode.value = qr || null
       closePaymentModal()
     }
 
@@ -89,6 +92,7 @@ export default {
       selectedTicket,
       closePaymentModal,
       handlePaid,
+      qrCode,
     }
   },
 }

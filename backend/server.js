@@ -2,12 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const app = express();
-const db = require('../backend/db');
+
+const { db } = require('./db'); // виправлено шлях і правильне деструктурування
 const ticketRoutes = require('./routes/tickets');
 const seatsRoutes = require('./routes/seats');
 const concertRoutes = require('./routes/concerts');
 const authRoutes = require('./routes/auth');
-
 
 app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
@@ -22,6 +22,7 @@ app.get('/', (req, res) => {
 	res.send('🚀 Сервер працює!');
 });
 
+// 🧠 ВАЖЛИВО: тепер використовуємо db.execute (яке приходить з db = pool.promise())
 db.execute('SELECT COUNT(*) AS total FROM tickets')
 	.then(([rows]) => {
 		console.log(`🎟️ Всього квитків у базі даних: ${rows[0].total}`);
