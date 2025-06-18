@@ -95,6 +95,7 @@ export default {
       const token = this.userStore.token
       return token && token !== 'null' ? { Authorization: `Bearer ${token}` } : {}
     },
+
     handleUserClick() {
       this.showRegister = true
     },
@@ -125,12 +126,11 @@ export default {
     buyTicket() {
       if (!this.selectedSeat) return
 
-      if (!this.userStore.token) {
+      if (!this.userStore.token || this.userStore.token === 'null') {
         alert('Ви маєте увійти, щоб купити квиток')
         this.showRegister = true
         return
       }
-
       axios
         .post(
           'http://localhost:3000/api/seats/buy',
@@ -146,6 +146,10 @@ export default {
         .then(() => {
           alert(`Квиток на місце №${this.selectedSeat.number} куплено`)
           this.selectedConcert = null
+          this.selectedSeat = null
+          this.seats = this.seats.map(s =>
+            s.id === this.selectedSeat?.id ? { ...s, taken: true } : s
+          )
         })
         .catch((error) => {
           console.error('Не вдалося купити квиток:', error)
@@ -155,6 +159,7 @@ export default {
   },
   async mounted() {
     await this.userStore.initFromLocalStorage()
+    console.log('Токен з userStore:', this.userStore.token)  // Ось тут додано лог токена
 
     try {
       const response = await axios.get('http://localhost:3000/api/concerts')

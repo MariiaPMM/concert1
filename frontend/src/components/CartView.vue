@@ -51,15 +51,17 @@ export default {
     const selectedTicket = ref(null)
 
     const fetchCart = async () => {
+      if (!userStore.token) {
+        message.value = 'Будь ласка, увійдіть в акаунт, щоб бачити корзину.'
+        return
+      }
       try {
-        const res = await api.get('/tickets/cart', {
-          headers: {
-            Authorization: `Bearer ${userStore.token}`,
-          },
-        })
+        // Якщо в api інстансі є інтерцептор, що додає токен — заголовки тут не потрібні
+        const res = await api.get('/tickets/cart')
         cart.value = res.data
+        message.value = ''
       } catch (err) {
-        message.value = 'Помилка завантаження корзини'
+        message.value = err.response?.data?.error || 'Помилка завантаження корзини'
         console.error(err)
       }
     }
@@ -79,6 +81,8 @@ export default {
       cart.value = cart.value.filter((item) => item.id !== ticket.id)
       qrCode.value = qr || null
       closePaymentModal()
+
+
     }
 
     onMounted(fetchCart)

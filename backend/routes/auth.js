@@ -37,9 +37,15 @@ router.post('/register', async (req, res) => {
 
 		const userId = result.insertId;
 
-		const token = jwt.sign({ id: userId, name }, JWT_SECRET, {
-			expiresIn: '1d',
-		});
+		// const token = jwt.sign({ id: userId, name }, JWT_SECRET, {
+		// 	expiresIn: '1d',
+		// });
+
+		const token = jwt.sign(
+  { id: user.id, name: user.name },
+  process.env.JWT_SECRET,          // <‑‑ ОДИН секрет
+  { expiresIn: '1d' }
+);
 
 		return res.json({ message: 'Реєстрація успішна', token });
 	} catch (err) {
@@ -53,23 +59,21 @@ router.post('/login', async (req, res) => {
 	const { email, password } = req.body;
 
 	if (!email || !password) {
-		return res.status(400).json({ error: 'Імʼя та пароль обовʼязкові' });
+		return res.status(400).json({ error: 'Email та пароль обовʼязкові' });
 	}
 
 	try {
-		const [rows] = await db.execute('SELECT * FROM users WHERE email = ?', [
-			email,
-		]);
+		const [rows] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
 		const user = rows[0];
 
 		if (!user) {
-			return res.status(401).json({ error: 'Невірне імʼя або пароль' });
+			return res.status(401).json({ error: 'Невірний email або пароль' });
 		}
 
 		const isMatch = await bcrypt.compare(password, user.password);
 
 		if (!isMatch) {
-			return res.status(401).json({ error: 'Невірне імʼя або пароль' });
+			return res.status(401).json({ error: 'Невірний email або пароль' });
 		}
 
 		const token = jwt.sign({ id: user.id, name: user.name }, JWT_SECRET, {
@@ -83,12 +87,12 @@ router.post('/login', async (req, res) => {
 	}
 });
 
-// ✅ Профіль
+// ✅ Отримання профілю користувача
 router.get('/profile', async (req, res) => {
 	const authHeader = req.headers.authorization;
 
-	if (!authHeader) {
-		return res.status(401).json({ error: 'Немає токена' });
+	if (!authHeader || !authHeader.startsWith('Bearer ')) {
+		return res.status(401).json({ error: 'Немає або некоректний токен' });
 	}
 
 	const token = authHeader.split(' ')[1];
