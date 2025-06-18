@@ -7,6 +7,7 @@ export const useUserStore = defineStore('user', {
     token: null,
     profile: null,
     isLoadingProfile: false,
+    purchasedTickets: JSON.parse(localStorage.getItem('purchasedTickets') || '[]'),
   }),
 
   getters: {
@@ -20,7 +21,6 @@ export const useUserStore = defineStore('user', {
       this.token = token
       localStorage.setItem('token', token)
       console.log('✅ Token збережено:', token)
-      
     },
 
     setProfile(profile) {
@@ -32,7 +32,9 @@ export const useUserStore = defineStore('user', {
       console.log('🚫 Очищення токена і профілю')
       this.token = null
       this.profile = null
+      // this.purchasedTickets = [] // НЕ очищаємо тут квитки!
       localStorage.removeItem('token')
+      // НЕ видаляємо 'purchasedTickets'
     },
 
     async initFromLocalStorage() {
@@ -52,12 +54,16 @@ export const useUserStore = defineStore('user', {
         console.log('👤 Профіль завантажено:', this.profile)
       } catch (e) {
         console.warn('❌ Token недійсний або запит не вдався:', e)
-
-        // 👉 Якщо потрібна діагностика — тимчасово коментуй очищення
         this.clearAll()
       } finally {
         this.isLoadingProfile = false
       }
+    },
+
+    addPurchasedTicket(ticketWithQR) {
+      this.purchasedTickets.push(ticketWithQR)
+      localStorage.setItem('purchasedTickets', JSON.stringify(this.purchasedTickets))
+      console.log('🧾 Квиток додано в кабінет:', ticketWithQR)
     },
   },
 })

@@ -76,14 +76,21 @@ export default {
       selectedTicket.value = null
     }
 
-    const handlePaid = ({ ticket, qrCode: qr }) => {
-      message.value = 'Квиток куплено!'
-      cart.value = cart.value.filter((item) => item.id !== ticket.id)
-      qrCode.value = qr || null
-      closePaymentModal()
+    // const handlePaid = ({ ticket, qrCode: qr }) => {
+    //   message.value = 'Квиток куплено!'
+    //   cart.value = cart.value.filter((item) => item.id !== ticket.id)
+    //   qrCode.value = qr || null
+    //   closePaymentModal()
+    // }
 
+const handlePaid = ({ ticket, qrCode: qr }) => {
+  message.value = 'Квиток куплено!'
+  cart.value = cart.value.filter((item) => item.id !== ticket.id)
+  qrCode.value = qr || null
+  userStore.addPurchasedTicket({ ...ticket, qrCode: qr }) // 🆕 Додаємо до кабінету
+  closePaymentModal()
+}
 
-    }
 
     onMounted(fetchCart)
 
