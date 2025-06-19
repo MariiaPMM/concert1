@@ -1,7 +1,5 @@
 <template>
   <div class="user-cabinet">
-    <!-- <button class="close-btn" @click="goHome">❌</button> -->
-
     <h2>Кабінет користувача</h2>
 
     <div v-if="loading">
@@ -20,6 +18,8 @@
             <p><strong>Назва:</strong> {{ ticket.concertName }}</p>
             <p><strong>Дата:</strong> {{ ticket.date }}</p>
             <p><strong>Ціна:</strong> {{ ticket.price }} ₴</p>
+            <!-- <p><strong>Локація:</strong> {{ ticket.concertLocation }}</p> -->
+            <p><strong>Місце:</strong>{{ ticket.seatNumber }}</p>
             <img :src="ticket.qrCode" alt="QR-код" class="qr-code" />
           </div>
         </div>
@@ -71,6 +71,8 @@ export default {
 
 <style scoped>
 .user-cabinet {
+  max-height: 80vh;
+  overflow-y: auto;
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -83,6 +85,8 @@ export default {
   border-radius: 8px;
   max-width: 600px;
   margin: 20px auto;
+  padding: 40px 0 0 0;
+
 }
 
 .close-btn {
@@ -119,9 +123,12 @@ export default {
   margin-bottom: 1rem;
   text-align: left;
   display: flex;
-  justify-content: center;
   flex-direction: column;
   align-items: center;
+  p {
+    padding: 0;
+    margin: 0;
+  }
 }
 
 .qr-code {
@@ -132,5 +139,13 @@ export default {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-around;
+}
+button {
+  background: #ff5555;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  width: 100px;
+  height: 30px;
 }
 </style>

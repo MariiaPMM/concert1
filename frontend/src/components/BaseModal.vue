@@ -2,7 +2,7 @@
   <div class="modal-overlay" @click.self="close">
     <div class="modal-content">
       <button class="close-button" @click="close">×</button>
-  
+
       <slot></slot>
     </div>
   </div>
@@ -32,6 +32,7 @@ export default {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+
 }
 .modal-content {
   background-color: #fff;
